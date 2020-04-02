@@ -1,0 +1,57 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.itcast.dao.IShopDao">
+    <!--开启user支持二级缓存-->
+    <cache/>
+    <!-- 配置 查询结果的列名和实体类的属性名的对应关系 -->
+    <resultMap id="shopMap" type="cn.itcast.domain.Shop">
+        <!-- 主键字段的对应 -->
+        <id property="id" column="id"></id>
+        <!--非主键字段的对应-->
+        <result property="shopName" column="shopName"></result>
+        <result property="shopNo" column="shopNo"></result>
+        <result property="shopAddress" column="shopAddress"></result>
+        <result property="shopType" column="shopType"></result>
+        <result property="shopPhone" column="shopPhone"></result>
+        <result property="shopInfo" column="shopInfo"></result>
+        <result property="shopImg" column="shopImg"></result>
+        <result property="shopStatus" column="shopStatus"></result>
+        <result property="status" column="status"></result>
+        <result property="openTime" column="openTime"></result>
+        <result property="boss_id" column="boss_id"></result>
+        <result property="boss_name" column="boss_name"></result>
+
+    </resultMap>
+
+    <!-- 了解的内容：抽取重复的sql语句-->
+    <sql id="defaultUser">
+        select * from shop
+    </sql>
+
+    <!--根据用户名或者手机查询-->
+    <select id="selectSearch" parameterType="java.lang.String" resultType="cn.itcast.domain.Shop">
+        select * from shop where shopName=#{search} or shopPhone=#{search}
+    </select>
+    <!--通过更新-->
+    <update id="updatePass" parameterType="java.lang.String">
+          update shop set shopStatus="审核通过",status=1 where id=#{id}
+    </update>
+    <!--驳回更新-->
+    <update id="updateBan" parameterType="java.lang.String">
+          update shop set shopStatus="已驳回",status=0 where id=#{id}
+    </update>
+    <!-- 批量更新  单个字段-->
+    <update id="updateOpen" parameterType="java.util.List">
+        update shop set status=1 where id in
+        <foreach collection="id" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+    <!-- 批量更新  单个字段-->
+    <update id="updateLock" parameterType="java.util.List">
+        update shop set status=0 where id in
+        <foreach collection="id" item="item" open="(" close=")" separator=",">
+            #{item}
+        </foreach>
+    </update>
+</mapper>

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/context
+	http://www.springframework.org/schema/context/spring-context.xsd
+	http://www.springframework.org/schema/aop
+	http://www.springframework.org/schema/aop/spring-aop.xsd
+	http://www.springframework.org/schema/tx
+	http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+    <!--开启注解的扫描，希望处理service和dao，controller不需要Spring框架去处理-->
+    <context:component-scan base-package="cn.itcast" >
+        <!--&lt;!&ndash;配置哪些注解不扫描&ndash;&gt;-->
+        <context:exclude-filter type="annotation" expression="org.springframework.stereotype.Controller" />
+        <!--&lt;!&ndash;controller使用ctrl+N 然后点击上方的include non-project... 第一个实现类 点击之后右键copy reference&ndash;&gt;-->
+    </context:component-scan>
+    <!--Spring整合MyBatis框架-->
+    <!--配置连接池-->
+    <!-- 引入外部的配置文件 -->
+    <context:property-placeholder location="classpath:jdbcConfig.properties"/>
+    <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+        <property name="driverClassName" value="${spring.datasource.driverClassName}"/>
+        <property name="url" value="${spring.datasource.url}"/>
+        <property name="username" value="${spring.datasource.username}"/>
+        <property name="password" value="${spring.datasource.password}"/>
+        <property name="initialSize" value="${spring.datasource.initialSize}"/>
+        <property name="minIdle" value="${spring.datasource.minIdle}"/>
+        <property name="maxActive" value="${spring.datasource.maxActive}"/>
+        <property name="maxWait" value="${spring.datasource.maxWait}"/>
+        <property name="timeBetweenEvictionRunsMillis" value="${spring.datasource.timeBetweenEvictionRunsMillis}"/>
+        <property name="minEvictableIdleTimeMillis" value="${spring.datasource.minEvictableIdleTimeMillis}"/>
+        <property name="validationQuery" value="${spring.datasource.validationQuery}"/>
+        <property name="testWhileIdle" value="${spring.datasource.testWhileIdle}"/>
+        <property name="testOnBorrow" value="${spring.datasource.testOnBorrow}"/>
+        <property name="testOnReturn" value="${spring.datasource.testOnReturn}"/>
+        <property name="poolPreparedStatements" value="${spring.datasource.poolPreparedStatements}"/>
+        <property name="maxPoolPreparedStatementPerConnectionSize" value="${spring.datasource.maxPoolPreparedStatementPerConnectionSize}"/>
+        <property name="filters" value="${spring.datasource.filters}"/>
+        <property name="connectionProperties" value="${spring.datasource.connectionProperties}"/>
+    </bean>
+
+    <!--spring管理session工厂-->
+    <!--<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">-->
+        <!--<property name="dataSource" ref="dataSource"/>-->
+        <!--<property name="mapperLocations" value="classpath:cn/itcast/dao/*.xml"/>-->
+        <!--<property name="configLocation" value="classpath:mybatis-config.xml"/>-->
+        <!--&lt;!&ndash;配置别名所在的包&ndash;&gt;-->
+        <!--<property name="typeAliasesPackage" value="cn.itcast.domain"/>-->
+        <!--&lt;!&ndash; 注入全局配置 &ndash;&gt;-->
+        <!--<property name="globalConfig" ref="globalConfiguration"/>-->
+
+    <!--</bean>-->
+    <!-- 3、配置mybatisplus的sqlSessionFactory -->
+    <bean id="sqlSessionFactory" class="com.baomidou.mybatisplus.extension.spring.MybatisSqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource" />
+        <property name="mapperLocations" value="classpath:cn/itcast/dao/*.xml"/>
+        <property name="configLocation" value="classpath:mybatis-config.xml"/>
+        <!-- 别名处理 -->
+        <property name="typeAliasesPackage" value="cn.itcast.domain.*"/>
+        <!-- 注入全局配置 -->
+        <property name="globalConfig" ref="globalConfiguration"/>
+        <property name="plugins">
+            <array>
+                <!-- 分页插件配置 -->
+                <bean id="paginationInterceptor" class="com.baomidou.mybatisplus.extension.plugins.PaginationInterceptor">
+                    <property name="dialectType" value="mysql" />
+                </bean>
+            </array>
+        </property>
+    </bean>
+    <!--mybatis-plus-->
+    <bean id="globalConfiguration" class="com.baomidou.mybatisplus.core.config.GlobalConfig">
+
+    </bean>
+
+
+    <!--配置AccountDao接口所在包-->
+    <bean id="mapperScanner" class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="cn.itcast.dao"/>
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+    </bean>
+
+    <!--配置Spring框架声明式事务管理-->
+    <!--配置事务管理器-->
+
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource" />
+    </bean>
+
+    <!--配置事务通知-->
+    <tx:advice id="txAdvice" transaction-manager="transactionManager">
+        <tx:attributes>
+            <tx:method name="find*" read-only="true"/>
+            <tx:method name="*" isolation="DEFAULT"/>
+        </tx:attributes>
+    </tx:advice>
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+
+
+    <!--配置AOP增强-->
+    <!--<aop:config proxy-target-class="true" >-->
+        <!--<aop:advisor advice-ref="txAdvice" pointcut="execution(* cn.itcast.service.impl.*.*(..))"/>-->
+    <!--</aop:config>-->
+
+</beans>
